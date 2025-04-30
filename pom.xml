@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.rhythmgame</groupId>
+    <artifactId>rhythm-game</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <javafx.version>21.0.1</javafx.version>
+        <main.class>com.rhythmgame.GameApp</main.class>
+        <platform>macos-aarch64</platform>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>${platform}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>${platform}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+            <classifier>${platform}</classifier>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+            
+            <!-- JavaFX Maven Plugin for development/testing -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>${main.class}</mainClass>
+                    <options>
+                        <option>--add-opens</option>
+                        <option>javafx.graphics/javafx.scene=ALL-UNNAMED</option>
+                    </options>
+                </configuration>
+            </plugin>
+            
+            <!-- Exec Maven Plugin for running the app -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>${main.class}</mainClass>
+                    <includePluginDependencies>true</includePluginDependencies>
+                </configuration>
+            </plugin>
+            
+            <!-- Creates a simple runnable JAR with proper JavaFX dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.class}</mainClass>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Creates a fat JAR with all dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${main.class}</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <finalName>${project.artifactId}-${project.version}-launcher</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Create a launcher script -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>create-launcher</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>echo</executable>
+                            <arguments>
+                                <argument>#!/bin/sh
+java --module-path ${java.home}/lib:/path/to/javafx-sdk-${javafx.version}/lib \
+--add-modules=javafx.controls,javafx.base,javafx.graphics \
+--add-opens javafx.graphics/javafx.scene=ALL-UNNAMED \
+-jar target/${project.artifactId}-${project.version}.jar</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/run.sh</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>make-launcher-executable</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>chmod</executable>
+                            <arguments>
+                                <argument>+x</argument>
+                                <argument>${project.build.directory}/run.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
