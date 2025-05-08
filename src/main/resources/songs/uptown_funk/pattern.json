@@ -1,0 +1,40 @@
+{
+  "songInfo": {
+    "title": "Uptown Funk",
+    "artist": "Mark Ronson ft. Bruno Mars",
+    "bpm": 116,
+    "offset": 0.0,
+    "audioFile": "uptown_funk.mp3",
+    "difficulty": "Medium"
+  },
+  "notePattern": [
+    {"time": 0.517, "lane": 0},
+    {"time": 0.776, "lane": 1},
+    {"time": 1.034, "lane": 2},
+    {"time": 1.293, "lane": 3},
+    {"time": 1.552, "lane": 1},
+    {"time": 2.069, "lane": 2},
+    {"time": 3.103, "lane": 0},
+    {"time": 3.362, "lane": 1},
+    {"time": 3.621, "lane": 2},
+    {"time": 3.879, "lane": 3},
+    {"time": 4.138, "lane": 0},
+    {"time": 4.655, "lane": 1},
+    {"time": 4.914, "lane": 2},
+    {"time": 5.172, "lane": 3},
+    {"time": 5.431, "lane": 0},
+    {"time": 5.690, "lane": 1},
+    {"time": 5.948, "lane": 2},
+    {"time": 6.207, "lane": 3},
+    {"time": 15.517, "lane": 0},
+    {"time": 15.776, "lane": 1},
+    {"time": 16.034, "lane": 2},
+    {"time": 16.293, "lane": 3},
+    {"time": 16.552, "lane": 0},
+    {"time": 18.103, "lane": 0},
+    {"time": 18.362, "lane": 1},
+    {"time": 18.621, "lane": 2},
+    {"time": 18.879, "lane": 3},
+    {"time": 19.138, "lane": 0}
+  ]
+}

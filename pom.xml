@@ -12,29 +12,62 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <javafx.version>21.0.1</javafx.version>
+        <javafx.version>21.0.2</javafx.version>
         <main.class>com.rhythmgame.GameApp</main.class>
         <platform>macos-aarch64</platform>
     </properties>
 
     <dependencies>
+        <!-- JavaFX dependencies -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
-            <classifier>${platform}</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
-            <classifier>${platform}</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-base</artifactId>
             <version>${javafx.version}</version>
-            <classifier>${platform}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        
+        <!-- Jackson dependencies -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.15.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.15.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.15.2</version>
+        </dependency>
+        
+        <!-- Testing dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -63,21 +96,15 @@
                 </configuration>
             </plugin>
             
-            <!-- Exec Maven Plugin for running the app -->
+            <!-- Plugin for Surefire (testing) -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
                 <configuration>
-                    <mainClass>${main.class}</mainClass>
-                    <includePluginDependencies>true</includePluginDependencies>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
                 </configuration>
             </plugin>
             
@@ -141,12 +168,25 @@
                 </executions>
             </plugin>
             
-            <!-- Create a launcher script -->
+            <!-- Exec Maven Plugin with multiple executions -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <executions>
+                    <!-- Default execution for running the app -->
+                    <execution>
+                        <id>default-cli</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>${main.class}</mainClass>
+                            <includePluginDependencies>true</includePluginDependencies>
+                        </configuration>
+                    </execution>
+                    
+                    <!-- Create launcher script -->
                     <execution>
                         <id>create-launcher</id>
                         <phase>package</phase>
@@ -154,17 +194,21 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>echo</executable>
+                            <executable>bash</executable>
                             <arguments>
-                                <argument>#!/bin/sh
-java --module-path ${java.home}/lib:/path/to/javafx-sdk-${javafx.version}/lib \
---add-modules=javafx.controls,javafx.base,javafx.graphics \
---add-opens javafx.graphics/javafx.scene=ALL-UNNAMED \
--jar target/${project.artifactId}-${project.version}.jar</argument>
+                                <argument>-c</argument>
+                                <argument>
+                                    echo '#!/bin/sh' > ${project.build.directory}/run.sh;
+                                    echo 'java --module-path ${java.home}/lib:/path/to/javafx-sdk-${javafx.version}/lib \' >> ${project.build.directory}/run.sh;
+                                    echo '--add-modules=javafx.controls,javafx.base,javafx.graphics,javafx.media,javafx.fxml \' >> ${project.build.directory}/run.sh;
+                                    echo '--add-opens javafx.graphics/javafx.scene=ALL-UNNAMED \' >> ${project.build.directory}/run.sh;
+                                    echo '-jar target/${project.artifactId}-${project.version}.jar' >> ${project.build.directory}/run.sh
+                                </argument>
                             </arguments>
-                            <outputFile>${project.build.directory}/run.sh</outputFile>
                         </configuration>
                     </execution>
+                    
+                    <!-- Make launcher executable -->
                     <execution>
                         <id>make-launcher-executable</id>
                         <phase>package</phase>

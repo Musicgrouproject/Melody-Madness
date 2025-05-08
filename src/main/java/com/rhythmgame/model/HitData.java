@@ -1,19 +1,26 @@
 package com.rhythmgame.model;
 
-import com.rhythmgame.model.Note.HitResult;
-
 /**
- * Data class to store hit result information.
+ * Data class to hold hit result information.
  */
 public class HitData {
+    /**
+     * Possible hit result types.
+     */
+    public enum HitResult {
+        PERFECT,  // Perfect hit on a tap note
+        GOOD,     // Good hit on a tap note  
+        MISS      // Missed note completely
+    }
+
     private final HitResult result;
     private final int points;
     
     /**
      * Create a new hit data object.
      * 
-     * @param result The hit result type
-     * @param points The points awarded for this hit
+     * @param result The hit result (PERFECT, GOOD, MISS)
+     * @param points The points earned for this hit
      */
     public HitData(HitResult result, int points) {
         this.result = result;
@@ -21,21 +28,20 @@ public class HitData {
     }
     
     /**
-     * Get the hit result type.
+     * Get the hit result.
      * 
-     * @return The hit result type
+     * @return The hit result
      */
     public HitResult getResult() {
         return result;
     }
     
     /**
-     * Get the points awarded for this hit.
+     * Get the points earned for this hit.
      * 
-     * @return The points
+     * @return The points earned
      */
     public int getPoints() {
         return points;
     }
 }
-

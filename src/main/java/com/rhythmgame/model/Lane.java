@@ -1,6 +1,7 @@
 package com.rhythmgame.model;
 
-import com.rhythmgame.model.Note.HitResult;
+import com.rhythmgame.model.HitData;
+import com.rhythmgame.model.HitData.HitResult;
 
 import javafx.animation.FadeTransition;
 import javafx.scene.control.Label;
@@ -19,6 +20,7 @@ import java.util.List;
 /**
  * Represents a lane in the rhythm game where notes fall.
  * Manages the notes within the lane, handles hit detection, and visual representation.
+ * Supports tap notes that require precise timing to hit.
  */
 public class Lane {
     
@@ -86,11 +88,11 @@ public class Lane {
     }
     
     /**
-     * Add a new note to this lane.
+     * Add a note to this lane.
      * 
      * @param note The note to add
      */
-    public void addNote(Note note) {
+    private void addNote(Note note) {
         notes.add(note);
         note.addToPane(lanePane);
     }
@@ -107,13 +109,14 @@ public class Lane {
         return note;
     }
     
+    
     /**
      * Update all notes in this lane.
      * 
-     * @return true if any notes were removed, false otherwise
+     * @return HitData object if a note was missed, null otherwise
      */
-    public boolean updateNotes() {
-        boolean notesRemoved = false;
+    public HitData updateNotes() {
+        HitData missData = null;
         
         Iterator<Note> iterator = notes.iterator();
         while (iterator.hasNext()) {
@@ -122,20 +125,23 @@ public class Lane {
             // Update note position
             boolean stillVisible = note.update();
             
-            // Check if note was missed
-            if (!note.isHit() && note.getY() > hitLineY + 50) {
+            // Check if note was missed but not already marked as missed
+            if (!note.isMissed() && note.getY() > hitLineY + 50) {
                 note.showMissEffect();
+                note.setMissed(true); // Mark the note as missed
+                missData = new HitData(HitData.HitResult.MISS, Note.SCORE_MISS);
+                // Only count one miss per frame for better control
+                break;
             }
             
-            // Remove notes that are no longer visible
-            if (!stillVisible) {
+            // Remove notes that are far beyond the hit area (cleanup)
+            if (!stillVisible || note.getY() > hitLineY + 150) {
                 note.removeFromPane();
                 iterator.remove();
-                notesRemoved = true;
             }
         }
         
-        return notesRemoved;
+        return missData;
     }
     
     /**
@@ -155,15 +161,15 @@ public class Lane {
         
         // Check for note hits
         for (Note note : notes) {
-            HitResult result = note.checkHit(hitLineY);
+            HitData.HitResult result = note.checkHit(hitLineY);
             if (result != null) {
                 showHitFeedback(result);
                 
-                // Calculate score based on hit quality
+                // Calculate score based on result
                 int points = switch (result) {
                     case PERFECT -> Note.SCORE_PERFECT;
                     case GOOD -> Note.SCORE_GOOD;
-                    default -> Note.SCORE_MISS;
+                    case MISS -> Note.SCORE_MISS;
                 };
                 
                 return new HitData(result, points);
@@ -211,6 +217,7 @@ public class Lane {
         return laneNumber;
     }
     
+    
     /**
      * Get the key code assigned to this lane.
      * 
@@ -234,13 +241,12 @@ public class Lane {
      * 
      * @param result The hit result to display
      */
-    private void showHitFeedback(HitResult result) {
+    private void showHitFeedback(HitData.HitResult result) {
         // Remove previous feedback if it exists
         if (hitFeedbackLabel != null) {
             lanePane.getChildren().remove(hitFeedbackLabel);
         }
         
-        // Create appropriate text and color based on hit result
         String text;
         Color color;
         
@@ -276,5 +282,5 @@ public class Lane {
         fadeOut.setOnFinished(e -> lanePane.getChildren().remove(hitFeedbackLabel));
         fadeOut.play();
     }
+    
 }
-

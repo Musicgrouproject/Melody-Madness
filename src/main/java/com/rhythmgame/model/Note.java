@@ -1,15 +1,20 @@
 package com.rhythmgame.model;
 
+import com.rhythmgame.model.HitData.HitResult;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 /**
- * Represents a note in the rhythm game that falls down a lane.
- * Contains position, speed, and visual elements.
+ * Represents a single tap note in the rhythm game that falls down a lane.
+ * Contains position, speed, and visual elements for tap notes.
+ * Players must press the corresponding key when the note reaches the hit line
+ * for perfect or good timing.
  */
 public class Note {
     
@@ -21,6 +26,7 @@ public class Note {
     // Hit detection constants
     private static final double HIT_PERFECT_RANGE = 15;
     private static final double HIT_GOOD_RANGE = 40;
+    private static final double HIT_MISS_RANGE = 60;  // Distance in pixels for a miss
     
     // Hit scoring constants
     public static final int SCORE_PERFECT = 100;
@@ -35,9 +41,10 @@ public class Note {
     private int laneNumber;
     private boolean isHit = false;
     private boolean isVisible = true;
+    private boolean missed = false; // Track if note was specifically missed
     
     /**
-     * Create a new note in the specified lane.
+     * Create a new tap note in the specified lane.
      * 
      * @param laneNumber The lane index (0-3)
      * @param startY The starting Y position
@@ -61,6 +68,7 @@ public class Note {
         noteRect.setTranslateX(centerX - (WIDTH / 2));
     }
     
+    
     /**
      * Update the note position based on its speed.
      * 
@@ -74,33 +82,43 @@ public class Note {
         // Move the note down
         noteRect.setTranslateY(noteRect.getTranslateY() + speed);
         
-        // Check if the note is off the bottom of the screen
+        // Check if the note is completely off the bottom of the screen
         return !(noteRect.getTranslateY() > 700);
     }
     
     /**
-     * Check if this note can be hit at the specified hit line position.
+     * Check if this note has been hit at the specified Y position.
      * 
      * @param hitLineY The Y-coordinate of the hit line
-     * @return The hit result type (PERFECT, GOOD, or MISS)
+     * @return The hit result, or null if not hit
      */
     public HitResult checkHit(double hitLineY) {
-        if (isHit || !isVisible) {
+        // Only process if the note has not been hit yet
+        if (isHit) {
             return null;
         }
         
-        double noteY = noteRect.getTranslateY() + (HEIGHT / 2);
-        double distance = Math.abs(noteY - hitLineY);
+        // Calculate how close the note is to the hit line
+        double distance = Math.abs(getY() - hitLineY);
         
         if (distance <= HIT_PERFECT_RANGE) {
-            showHitEffect(Color.GOLD); // Perfect hit effect
+            // Perfect hit - show gold effect
+            showHitEffect(Color.GOLD);
+            isHit = true;
             return HitResult.PERFECT;
         } else if (distance <= HIT_GOOD_RANGE) {
-            showHitEffect(Color.SILVER); // Good hit effect
+            // Good hit - show silver effect
+            showHitEffect(Color.SILVER);
+            isHit = true;
             return HitResult.GOOD;
+        } else if (distance <= HIT_MISS_RANGE) {
+            // Miss - show red effect
+            showHitEffect(Color.RED);
+            isHit = true;
+            return HitResult.MISS;
         }
         
-        // Too far to hit
+        // Not close enough to hit
         return null;
     }
     
@@ -139,6 +157,7 @@ public class Note {
         }
         
         isHit = true;
+        missed = true; // Mark as specifically missed
         
         // Change appearance for miss feedback
         noteRect.setFill(Color.RED);
@@ -158,6 +177,7 @@ public class Note {
      * @param parent The parent pane to add to
      */
     public void addToPane(Pane parent) {
+        // Add the note to the pane
         parent.getChildren().add(noteRect);
     }
     
@@ -165,8 +185,8 @@ public class Note {
      * Remove this note's visual representation from its parent pane.
      */
     public void removeFromPane() {
-        Pane parent = (Pane) noteRect.getParent();
-        if (parent != null) {
+        if (noteRect.getParent() instanceof Pane parent) {
+            // Remove note safely
             parent.getChildren().remove(noteRect);
         }
     }
@@ -208,12 +228,28 @@ public class Note {
     }
     
     /**
-     * Represents the possible hit result types.
+     * Check if this note has been missed.
+     * 
+     * @return true if the note was missed, false otherwise
      */
-    public enum HitResult {
-        PERFECT,
-        GOOD,
-        MISS
+    public boolean isMissed() {
+        return missed;
     }
+    
+    /**
+     * Set the missed status of this note.
+     * 
+     * @param missed true to mark as missed, false otherwise
+     */
+    public void setMissed(boolean missed) {
+        this.missed = missed;
+        
+        // If marking as missed, also mark as hit since it can't be hit anymore
+        if (missed) {
+            this.isHit = true;
+        }
+    }
+    
+    
+    // Using HitResult enum from HitData class
 }
-
